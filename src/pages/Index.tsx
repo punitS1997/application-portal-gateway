@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, Loader2, FileText, XCircle, CheckCircle } from "lucide-react";
+import { Upload, Loader2, FileText, XCircle, CheckCircle, Download } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Index() {
@@ -123,6 +123,43 @@ export default function Index() {
     }
   };
 
+  const handleDownload = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('resumes')
+        .download(filePath);
+
+      if (error) {
+        throw error;
+      }
+
+      // Create a URL for the downloaded file
+      const url = window.URL.createObjectURL(data);
+      
+      // Create a temporary anchor element and trigger the download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filePath.split('/').pop() || 'resume'; // Use the original filename or 'resume' as fallback
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+
+      toast({
+        title: "File downloaded successfully",
+      });
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast({
+        variant: "destructive",
+        title: "Error downloading file",
+        description: "Please try again",
+      });
+    }
+  };
+
   const renderUploadStatus = () => {
     switch (uploadStatus) {
       case 'uploading':
@@ -234,6 +271,21 @@ export default function Index() {
                       <p className="mt-2 text-sm text-gray-500">
                         {uploadedFile?.name}
                       </p>
+                      {uploadStatus === 'success' && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownload(filePath);
+                          }}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Download
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
