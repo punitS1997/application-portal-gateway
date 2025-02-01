@@ -127,34 +127,23 @@ export default function Index() {
     try {
       const { data, error } = await supabase.storage
         .from('resumes')
-        .download(filePath);
+        .createSignedUrl(filePath, 60); // Creates a signed URL that expires in 60 seconds
 
       if (error) {
         throw error;
       }
 
-      // Create a URL for the downloaded file
-      const url = window.URL.createObjectURL(data);
-      
-      // Create a temporary anchor element and trigger the download
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filePath.split('/').pop() || 'resume'; // Use the original filename or 'resume' as fallback
-      document.body.appendChild(link);
-      link.click();
-      
-      // Clean up
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(link);
+      // Open the signed URL in a new tab
+      window.open(data.signedUrl, '_blank');
 
       toast({
-        title: "File downloaded successfully",
+        title: "File opened successfully",
       });
     } catch (error) {
       console.error('Error downloading file:', error);
       toast({
         variant: "destructive",
-        title: "Error downloading file",
+        title: "Error accessing file",
         description: "Please try again",
       });
     }
@@ -283,7 +272,7 @@ export default function Index() {
                           }}
                         >
                           <Download className="h-4 w-4 mr-2" />
-                          Download
+                          Open File
                         </Button>
                       )}
                     </div>
